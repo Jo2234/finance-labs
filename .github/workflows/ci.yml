@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lab:
+          - prompt-firewall
+          - etf-liquidity
+          - margin-cascade
+          - factor-crowding
+          - bond-auction-tail
+          - options-skew
+          - covenant-headroom
+          - guidance-drift
+          - microstructure-stress
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: labs/${{ matrix.lab }}/pyproject.toml
+      - name: Install lab and test runner
+        run: python -m pip install -e "labs/${{ matrix.lab }}" pytest
+      - name: Test lab
+        working-directory: labs/${{ matrix.lab }}
+        run: python -m pytest -q
+
