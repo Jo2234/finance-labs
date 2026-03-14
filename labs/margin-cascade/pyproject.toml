@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "margin-cascade-lab"
+version = "0.1.0"
+description = "Offline margin-call cascade simulator for leveraged portfolios and price-impact stress tests"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Johan Vaz", email = "v.johan2234@gmail.com" }]
+keywords = ["finance", "risk", "stress-testing", "leverage", "cli"]
+dependencies = []
+
+[project.scripts]
+margin-cascade = "margin_cascade_lab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
