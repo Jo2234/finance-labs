@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "covenant-headroom-lab"
+version = "0.1.0"
+description = "Offline credit covenant headroom and downside stress analyzer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Johan Vaz", email = "v.johan2234@gmail.com" }]
+keywords = ["credit", "finance", "covenants", "risk", "cli"]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Jo2234/covenant-headroom-lab"
+Repository = "https://github.com/Jo2234/covenant-headroom-lab"
+
+[project.scripts]
+covenant-headroom = "covenant_headroom_lab.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
