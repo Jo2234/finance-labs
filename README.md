@@ -17,6 +17,7 @@ Every lab is an independent Python project with its own package metadata, source
 | [Covenant Headroom](labs/covenant-headroom/) | How close is a borrower to leverage, coverage, or liquidity breaches under explicit downside scenarios? | `PYTHONPATH=labs/covenant-headroom/src python3 -m covenant_headroom_lab analyze labs/covenant-headroom/examples/sample_financials.csv --max-net-leverage 4.5 --min-interest-coverage 2.0 --min-liquidity 25 --scenario hard-landing:-20:15:-10` |
 | [Guidance Drift](labs/guidance-drift/) | Where does optimistic earnings commentary diverge from weakening growth, margins, or guidance revisions? | `PYTHONPATH=labs/guidance-drift/src python3 -m guidance_drift_lab analyze labs/guidance-drift/examples/sample_guidance.csv --format markdown` |
 | [Microstructure Stress](labs/microstructure-stress/) | Do spread, volume shock, Amihud illiquidity, and order-book imbalance point to stressed execution conditions? | `PYTHONPATH=labs/microstructure-stress/src python3 -m microstress labs/microstructure-stress/examples/stressed_tape.csv --format markdown` |
+| [Central Bank Path](labs/central-bank-path/) | What policy path do rate futures imply per meeting, and does the macro picture support it? | `PYTHONPATH=labs/central-bank-path/src python3 -m cbpathlab analyze labs/central-bank-path/data/sample_path.csv --current-rate 5.35 --neutral-rate 3.25` |
 
 ## Testing
 

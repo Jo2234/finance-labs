@@ -1,0 +1,5 @@
+date,contract,futures_price,expected_rate,core_pce_yoy,unemployment_rate,ism_new_orders
+2026-03-18,ZQH6,94.90,5.10,3.1,4.8,46.0
+2026-05-06,ZQK6,95.14,4.86,3.1,4.8,46.0
+2026-06-17,ZQM6,95.41,4.59,3.1,4.8,46.0
+2026-07-29,ZQN6,95.52,4.48,3.1,4.8,46.0
