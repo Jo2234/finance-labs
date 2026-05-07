@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Sequence
 
@@ -47,7 +48,7 @@ def _run_analyze(args: argparse.Namespace) -> int:
     body = render_markdown(report) if args.format == "markdown" else json.dumps(report.to_dict(), indent=2)
     if args.output:
         args.output.write_text(body + "\n", encoding="utf-8")
-    print(_summary_line(report))
+    print(_summary_line(report), file=sys.stderr if args.format == "json" and not args.output else sys.stdout)
     if not args.output:
         print(body)
     return 0
@@ -74,7 +75,7 @@ def render_markdown(report: CrowdingReport) -> str:
 - **Risk level:** {report.risk_level}
 - **Crowding score:** {report.crowding_score}/100
 - **Top factor:** {report.top_factor} ({report.top_factor_weight:.1%})
-- **Average pairwise correlation:** {report.average_pairwise_correlation:.2f}
+- **Top-factor dollar-pair correlation:** {report.average_pairwise_correlation:.2f}
 - **Factor concentration HHI:** {report.concentration_hhi:.2f}
 - **Unwind stress loss:** {report.unwind_loss_pct:.2f}%
 

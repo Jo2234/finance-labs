@@ -42,17 +42,17 @@ The included sample book models four funds with shared exposures to ALPHA, BETA,
 
 - Rounds simulated: **2**
 - Total forced liquidation: **$7,142**
-- Systemic risk score: **41.35/100**
+- Systemic risk score: **17.18/100**
 - Most stressed fund: **Beacon**
 
 ## Final fund health
 
-| Fund | Assets | Debt | Equity | Margin | Leverage |
-|---|---:|---:|---:|---:|---:|
-| Atlas | $6,838 | $0 | $6,838 | 100.0% | 1.00x |
-| Beacon | $7,031 | $5,058 | $1,974 | 28.1% | 3.56x |
-| Meridian | $11,034 | $6,500 | $4,534 | 41.1% | 2.43x |
-| Northstar | $11,258 | $7,800 | $3,458 | 30.7% | 3.26x |
+| Fund | Assets | Debt | Equity | Margin | Leverage | Status |
+|---|---:|---:|---:|---:|---:|---|
+| Atlas | $6,838 | $0 | $6,838 | 100.0% | 1.00x | solvent |
+| Beacon | $7,031 | $5,058 | $1,974 | 28.1% | 3.56x | solvent |
+| Meridian | $11,034 | $6,500 | $4,534 | 41.1% | 2.43x | solvent |
+| Northstar | $11,258 | $7,800 | $3,458 | 30.7% | 3.26x | solvent |
 
 ## Final prices
 
@@ -82,6 +82,7 @@ Beacon,BETA,90,58,0,18000
 - `fund`: portfolio or fund name
 - `asset`: shared asset identifier
 - `units`: long units held by the fund
+- Repeated `(fund, asset)` rows are lots: their units are added before simulation. Prices must agree; the lowest supplied market depth for an asset is retained.
 - `price`: starting asset price
 - `debt`: fund-level debt; if repeated on multiple rows for a fund, the simulator uses the largest value to avoid double-counting
 - `market_depth`: approximate sale value needed for a 1 / impact_coefficient proportional impact unit; lower values make an asset more fragile
@@ -102,6 +103,10 @@ new_price = old_price * (1 - price_impact)
 ```
 
 6. Repeat until no fund breaches maintenance margin or `max_rounds` is reached.
+
+Debt remains the outstanding liability even when it exceeds remaining assets. Equity can be negative; such a fund is labeled `insolvent`. Leverage is undefined for nonpositive equity, and margin is undefined for zero assets: JSON uses `null` and Markdown uses `N/A`. An empty debtor is still insolvent, not healthy.
+
+The 0–100 systemic score uses 55% average asset drawdown, 30% forced-sale proceeds divided by **initial** gross asset value, and 15% the fraction of funds that are insolvent or have margin below 35%. Each component is capped at one for scoring. JSON exposes the uncapped `risk_components` and initial gross asset value for reconciliation. This replaces the old fund-count/final-assets formula: duplicating an otherwise identical fund no longer multiplies the score, and liquidation does not shrink its own denominator. These weights are screening assumptions, not empirically calibrated probabilities.
 
 This is a deliberately transparent stress model, not an execution-quality market simulator. It is meant to make assumptions visible and scenario comparisons repeatable.
 

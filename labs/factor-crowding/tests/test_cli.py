@@ -42,3 +42,14 @@ def test_cli_writes_markdown_and_json(tmp_path):
     assert "# Factor Crowding Radar Report" in report
     assert "Mega-cap AI" in report
     assert "Unwind stress loss" in report
+
+
+def test_json_stdout_is_one_document_and_summary_goes_to_stderr():
+    root = Path(__file__).resolve().parents[1]
+    completed = subprocess.run(
+        [sys.executable, '-m', 'factor_crowding_radar', 'analyze',
+         str(root / 'examples' / 'sample_portfolio.json'), '--format', 'json'],
+        cwd=root, env={'PYTHONPATH': 'src'}, text=True, capture_output=True, check=True,
+    )
+    assert json.loads(completed.stdout)['top_factor'] == 'AI Infrastructure'
+    assert 'crowding risk' in completed.stderr
