@@ -9,6 +9,7 @@ description = "Offline ETF liquidity illusion and redemption-stress diagnostics"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Johan Vaz", email = "v.johan2234@gmail.com" }]
 keywords = ["finance", "etf", "liquidity", "stress-testing", "quant"]
 dependencies = []

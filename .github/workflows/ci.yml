@@ -8,6 +8,23 @@ permissions:
   contents: read
 
 jobs:
+  release-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install release tooling
+        run: python -m pip install build 'setuptools>=77' wheel pytest
+      - name: Build and exercise installed distributions
+        run: python scripts/check_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: finance-labs-distributions
+          path: dist/release/
+          if-no-files-found: error
+
   test:
     runs-on: ubuntu-latest
     strategy:
