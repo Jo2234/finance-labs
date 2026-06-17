@@ -1,0 +1,9 @@
+fund,asset,units,price,debt,market_depth
+Beacon,ALPHA,120,100,12200,28000
+Beacon,BETA,90,58,0,18000
+Meridian,ALPHA,80,100,6500,28000
+Meridian,GAMMA,160,35,0,12000
+Northstar,BETA,140,58,7800,18000
+Northstar,GAMMA,110,35,0,12000
+Atlas,DELTA,200,25,0,45000
+Atlas,ALPHA,25,100,0,28000
