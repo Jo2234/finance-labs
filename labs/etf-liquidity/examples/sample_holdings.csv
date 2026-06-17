@@ -1,0 +1,7 @@
+ticker,weight,adv_usd,spread_bps,liquidity_tier
+MEGACAP,0.22,2500000000,2.5,liquid
+BANKETF,0.16,900000000,6.0,liquid
+CLO_AAA,0.18,120000000,28.0,moderate
+HY_BOND,0.20,75000000,55.0,thin
+SMID_CAP,0.14,60000000,42.0,thin
+EM_CREDIT,0.10,35000000,85.0,thin
