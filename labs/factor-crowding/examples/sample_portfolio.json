@@ -1,0 +1,11 @@
+{
+  "positions": [
+    {"name": "NVDA proxy", "weight": 0.22, "factor": "AI Infrastructure", "returns": [0.018, 0.025, -0.021, 0.030, 0.014, -0.016, 0.022, 0.011]},
+    {"name": "Semicap basket", "weight": 0.18, "factor": "AI Infrastructure", "returns": [0.016, 0.024, -0.020, 0.028, 0.012, -0.015, 0.021, 0.010]},
+    {"name": "Cloud hyperscaler", "weight": 0.16, "factor": "AI Infrastructure", "returns": [0.014, 0.021, -0.018, 0.025, 0.011, -0.013, 0.018, 0.009]},
+    {"name": "Cybersecurity long", "weight": 0.11, "factor": "Quality Growth", "returns": [0.006, 0.010, -0.005, 0.012, 0.006, -0.004, 0.009, 0.004]},
+    {"name": "Treasury future hedge", "weight": 0.13, "factor": "Rates Hedge", "returns": [-0.003, -0.001, 0.006, -0.004, 0.002, 0.005, -0.002, 0.001]},
+    {"name": "Healthcare value", "weight": 0.12, "factor": "Defensive Value", "returns": [0.002, -0.001, 0.004, 0.001, 0.003, 0.002, -0.001, 0.002]},
+    {"name": "Cash", "weight": 0.08, "factor": "Cash", "returns": [0, 0, 0, 0, 0, 0, 0, 0]}
+  ]
+}
