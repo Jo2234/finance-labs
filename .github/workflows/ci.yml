@@ -23,6 +23,7 @@ jobs:
           - covenant-headroom
           - guidance-drift
           - microstructure-stress
+          - central-bank-path
         python-version: ["3.10", "3.12"]
     steps:
       - uses: actions/checkout@v4
