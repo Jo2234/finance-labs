@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "guidance-drift-lab"
+version = "0.1.0"
+description = "Detect divergence between earnings-call language and numeric guidance trends."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Johan Vaz", email = "v.johan2234@gmail.com" }]
+dependencies = []
+keywords = ["finance", "earnings", "nlp", "guidance", "quant"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Topic :: Office/Business :: Financial",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "build>=1.2"]
+
+[project.scripts]
+guidance-drift = "guidance_drift_lab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
