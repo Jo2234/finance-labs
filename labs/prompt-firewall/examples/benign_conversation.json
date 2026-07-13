@@ -1,0 +1,6 @@
+{
+  "messages": [
+    {"role": "system", "content": "Answer product support questions using the public help center."},
+    {"role": "user", "content": "Can you summarize the refund policy in two bullets and mention where customers can read more?"}
+  ]
+}
