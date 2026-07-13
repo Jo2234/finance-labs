@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "microstructure-stress-lab"
+version = "0.1.0"
+description = "Offline market microstructure stress analytics for liquidity, spread, and order-book imbalance signals."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Johan Vaz", email = "252314190+Jo2234@users.noreply.github.com" }]
+dependencies = []
+keywords = ["finance", "market-microstructure", "liquidity", "risk", "cli"]
+
+[project.scripts]
+microstress = "microstress.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
