@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "central-bank-path-lab"
+version = "0.1.0"
+description = "Offline CLI for auditing central-bank policy paths implied by futures curves."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Johan Vaz", email = "v.johan2234@gmail.com" }]
+keywords = ["finance", "macro", "rates", "futures", "risk", "cli"]
+dependencies = []
+
+[project.scripts]
+cbpathlab = "cbpathlab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
