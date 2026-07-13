@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "options-skew-sentinel"
+version = "0.1.0"
+description = "CLI that turns option-chain CSVs into implied-volatility skew and tail-risk reports."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Johan Vaz", email = "v.johan2234@gmail.com"}]
+keywords = ["options", "implied-volatility", "finance", "risk", "quant"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+]
+
+[project.scripts]
+skew-sentinel = "options_skew_sentinel.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
