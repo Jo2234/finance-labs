@@ -11,7 +11,7 @@ Index and single-name option skew often changes before the narrative does. A ste
 ## Features
 
 - Black-Scholes call/put pricing implemented with the Python standard library.
-- Robust bisection implied-volatility solver with intrinsic-value validation.
+- Bisection implied-volatility solver with a European no-volatility model bound.
 - Option-chain CSV analyzer grouped by expiry.
 - Put-wing vs call-wing risk reversal metrics.
 - Term-structure slope from near to far put-wing IV.
@@ -64,6 +64,8 @@ Required columns:
 
 The included file `examples/spy_option_chain_sample.csv` is synthetic demonstration data, intentionally committed so the project runs offline.
 
+Each input file must contain one underlying symbol and one consistent spot snapshot. Within an expiry, every row must agree on days to expiry and interest rate, including rows that are not selected as wings. Split multiple underlyings into separate input files; the analyzer rejects mixed symbols rather than combining their contracts.
+
 ## Methodology
 
 For each expiry, the analyzer selects a put wing near 93% moneyness and a call wing near 107% moneyness when available. It then solves implied volatility from the observed mid price using Black-Scholes and computes:
@@ -74,6 +76,8 @@ For each expiry, the analyzer selects a put wing near 93% moneyness and a call w
 - **Alert level** from the combined magnitude of average risk reversal and positive term slope.
 
 The model is intentionally simple and transparent. It is not a trading recommendation, an American-options pricer, or a replacement for market microstructure checks.
+
+The IV solver uses the European low-volatility model price as its lower bound and retains its 500% volatility bracket. It does not impose undiscounted spot intrinsic: at positive interest rates a European put can validly trade below strike minus spot (and a negative-rate call can similarly trade below spot minus strike).
 
 ## Example markdown report
 

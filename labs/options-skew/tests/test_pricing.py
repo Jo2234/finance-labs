@@ -22,5 +22,18 @@ def test_implied_volatility_recovers_vol_from_market_price():
 
 
 def test_implied_volatility_rejects_price_below_intrinsic_value():
-    with pytest.raises(ValueError, match="below intrinsic"):
+    with pytest.raises(ValueError, match="no-volatility"):
         implied_volatility("call", market_price=1.0, spot=105, strike=100, rate=0.0, days_to_expiry=30)
+
+
+@pytest.mark.parametrize('kind,spot,strike,rate', [('put', 80, 100, .1), ('call', 100, 80, -.1)])
+def test_european_price_below_spot_intrinsic_round_trips(kind, spot, strike, rate):
+    args = dict(spot=spot, strike=strike, rate=rate, days_to_expiry=365)
+    price = black_scholes_price(kind, **args, volatility=.2)
+    assert price < abs(spot - strike)
+    assert implied_volatility(kind, **args, market_price=price) == pytest.approx(.2, abs=1e-6)
+
+
+def test_rejects_price_below_discounted_european_bound():
+    with pytest.raises(ValueError, match='no-volatility'):
+        implied_volatility('put', market_price=5, spot=80, strike=100, rate=.1, days_to_expiry=365)

@@ -51,13 +51,27 @@ Example output:
 | Metric | Value |
 |---|---:|
 | Redemption shock | $300.0M |
-| Stressed underlying liquidity | $856.9M |
+| Stressed underlying liquidity | $14.7M |
+| Limiting constituent | EM_CREDIT |
 | AP daily capacity | $160.0M |
-| Liquidity gap | $140.0M |
-| Estimated discount | 369.8 bps |
-| Liquidation days | 1.88 |
+| Liquidity gap | $285.3M |
+| Estimated discount | 1270.3 bps |
+| Liquidation days | 20.41 |
 | Weighted spread | 31.9 bps |
 | Thin-basket weight | 44.0% |
+
+## Key warnings
+
+- AP capacity overwhelmed
+- Underlying basket cannot absorb redemption
+- Large weight in thinly traded constituents
+- Multi-day liquidation risk
+
+## Methodology
+
+- Fixed-weight pro-rata basket: constituent capacity is haircut ADV (liquid 35%, moderate 20%, thin 6%) divided by normalized holding weight and scaled by market depth; the smallest capacity binds.
+- Daily stress capacity is the lesser of authorized-participant capacity and the limiting constituent's basket capacity. Custom baskets and selective cash sales are not modeled.
+- Estimated discount combines weighted spread, tracking buffer, liquidity gap ratio, thin-basket penalty, and liquidation-days penalty.
 ```
 
 JSON mode is useful for pipelines:
@@ -78,7 +92,7 @@ HY_BOND,0.20,75000000,55.0,thin
 
 Columns:
 
-- `ticker`: constituent symbol or instrument label
+- `ticker`: unique constituent symbol or instrument label; consolidate repeated lots before analysis
 - `weight`: portfolio weight; all rows must sum to approximately 1.0
 - `adv_usd`: average daily dollar volume of the constituent
 - `spread_bps`: representative bid/ask spread in basis points
@@ -90,7 +104,9 @@ Columns:
    - Liquid constituents: 35% of ADV usable in a stress day
    - Moderate constituents: 20% of ADV usable
    - Thin constituents: 6% of ADV usable
-   - The basket capacity is multiplied by the stress `--market-depth` parameter.
+   - This is a **fixed-weight pro-rata basket**: each dollar redeemed requires selling each constituent in proportion to its weight.
+   - Normalize weights (accepted input totals are within 0.005 of one). For each constituent, calculate `ADV × tier haircut × market depth / normalized weight`; the smallest value is basket capacity.
+   - The report names that limiting constituent. A liquid holding cannot substitute for sales required in another holding. Custom redemption baskets and selective cash selling are outside this model.
 
 2. **Practical redemption capacity**
    - The daily redemption capacity is the smaller of stressed underlying basket liquidity and AP daily capacity.
@@ -103,6 +119,8 @@ Columns:
    - `contained`: small/no capacity gap and modest expected discount
    - `elevated`: meaningful gap, thin-basket exposure, or wide discount
    - `severe`: large gap, multi-day liquidation pressure, or discount above 180 bps
+
+With the included sample, EM_CREDIT limits the basket to $14.7M per day, below AP capacity of $160M. A $300M redemption therefore requires about 20.41 days under fixed weights. The discount formula is an uncapped heuristic and can produce very large estimates in such extreme scenarios; it is not a calibrated forecast.
 
 ## Development
 

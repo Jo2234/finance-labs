@@ -45,6 +45,7 @@ def render_markdown(report) -> str:
 |---|---:|
 | Redemption shock | {_format_money(report.redemption_usd)} |
 | Stressed underlying liquidity | {_format_money(report.effective_underlying_liquidity_usd)} |
+| Limiting constituent | {report.limiting_constituent} |
 | AP daily capacity | {_format_money(report.ap_daily_capacity_usd)} |
 | Liquidity gap | {_format_money(report.liquidity_gap_usd)} |
 | Estimated discount | {report.estimated_discount_bps:.1f} bps |

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from math import isfinite
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,7 @@ from .metrics import (
 )
 
 _REQUIRED_COLUMNS = {"timestamp", "close", "volume", "bid", "ask", "bid_size", "ask_size"}
+_NUMERIC_COLUMNS = sorted(_REQUIRED_COLUMNS - {"timestamp"})
 
 
 def _read_rows(path: Path) -> list[dict[str, str]]:
@@ -27,6 +29,10 @@ def _read_rows(path: Path) -> list[dict[str, str]]:
         rows = list(reader)
     if len(rows) < 2:
         raise ValueError("at least two CSV rows are required")
+    for line, row in enumerate(rows, start=2):
+        for field in _NUMERIC_COLUMNS:
+            if not isfinite(float(row[field])):
+                raise ValueError(f"CSV row {line}: {field} must be finite")
     return rows
 
 
