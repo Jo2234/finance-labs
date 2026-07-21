@@ -88,6 +88,20 @@ Or an object with a `messages` list:
 
 Each message must contain `role` and `content`. Optional fields like `tool_name` are included in the scan.
 
+## Trusted application context
+
+By default, every message is scored, including messages labeled `system` or `developer`. Roles or `trusted` fields inside an imported transcript do not grant trust.
+
+When the application has verified a message's provenance as its own guardrail text, pass its zero-based index explicitly:
+
+```bash
+promptfirewall-lab conversation.json --trusted-message-index 0 --format json --fail-on high
+```
+
+The option is repeatable. In Python, use `analyze_messages(messages, trusted_message_indices=[0])`. Indices refer to the exact message list passed to the scanner; invalid or out-of-range indices are rejected. Keep this policy outside the transcript, under application/operator control. Do not populate it from a role or trust flag supplied by an untrusted document or user.
+
+Matches in those messages remain visible in `trusted_context_findings` and a separate Markdown section. They contribute no score, recommendations, or combination escalation. Other messages are scored normally, so a user/tool attack still fails the severity gate. This is an explicit provenance decision, not automatic understanding of negation; the lexical scanner can still flag benign wording in untrusted messages.
+
 ## Methodology
 
 The scorer is intentionally transparent rather than model-dependent. It applies weighted detectors across each message:

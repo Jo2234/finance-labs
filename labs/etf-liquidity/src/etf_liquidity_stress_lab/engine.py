@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from math import isfinite
 from typing import Iterable, Literal
 
 LiquidityTier = Literal["liquid", "moderate", "thin"]
@@ -32,6 +33,7 @@ class LiquidityProfile:
     weighted_spread_bps: float
     thin_weight: float
     largest_position_weight: float
+    limiting_constituent: str
 
 
 @dataclass(frozen=True)
@@ -47,6 +49,7 @@ class StressReport:
     risk_level: str
     key_warnings: list[str]
     methodology: dict[str, str]
+    limiting_constituent: str
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -55,6 +58,11 @@ class StressReport:
 def _validate_holdings(holdings: list[Holding]) -> None:
     if not holdings:
         raise ValueError("at least one holding is required")
+    if len({h.ticker for h in holdings}) != len(holdings):
+        raise ValueError("holding tickers must be unique; consolidate repeated lots before analysis")
+    for holding in holdings:
+        if not all(isfinite(value) for value in (holding.weight, holding.adv_usd, holding.spread_bps)):
+            raise ValueError(f"{holding.ticker}: holding values must be finite")
     total_weight = sum(h.weight for h in holdings)
     if abs(total_weight - 1.0) > 0.005:
         raise ValueError(f"holding weights must sum to 1.0; got {total_weight:.4f}")
@@ -72,19 +80,26 @@ def _validate_holdings(holdings: list[Holding]) -> None:
 def compute_underlying_liquidity(holdings: Iterable[Holding]) -> LiquidityProfile:
     basket = list(holdings)
     _validate_holdings(basket)
-    effective = sum(h.adv_usd * _TIER_HAIRCUTS[h.liquidity_tier] for h in basket)
-    weighted_spread = sum(h.weight * h.spread_bps for h in basket)
-    thin_weight = sum(h.weight for h in basket if h.liquidity_tier == "thin")
-    largest = max(h.weight for h in basket)
+    total_weight = sum(h.weight for h in basket)
+    limiting = min(basket, key=lambda h: h.adv_usd * _TIER_HAIRCUTS[h.liquidity_tier] / h.weight)
+    effective = limiting.adv_usd * _TIER_HAIRCUTS[limiting.liquidity_tier] / (limiting.weight / total_weight)
+    weighted_spread = sum(h.weight * h.spread_bps for h in basket) / total_weight
+    thin_weight = sum(h.weight for h in basket if h.liquidity_tier == "thin") / total_weight
+    largest = max(h.weight for h in basket) / total_weight
     return LiquidityProfile(
         effective_daily_liquidity_usd=effective,
         weighted_spread_bps=weighted_spread,
         thin_weight=thin_weight,
         largest_position_weight=largest,
+        limiting_constituent=limiting.ticker,
     )
 
 
 def analyze_liquidity_stress(holdings: Iterable[Holding], scenario: StressScenario) -> StressReport:
+    if not all(isfinite(value) for value in asdict(scenario).values()):
+        raise ValueError("scenario values must be finite")
+    if scenario.tracking_buffer_bps < 0:
+        raise ValueError("tracking_buffer_bps must be non-negative")
     if scenario.fund_aum_usd <= 0:
         raise ValueError("fund_aum_usd must be positive")
     if not 0 < scenario.redemption_pct < 1:
@@ -99,7 +114,7 @@ def analyze_liquidity_stress(holdings: Iterable[Holding], scenario: StressScenar
     effective_liquidity = profile.effective_daily_liquidity_usd * scenario.market_depth_multiplier
     practical_capacity = min(effective_liquidity, scenario.ap_daily_capacity_usd)
     gap = max(0.0, redemption - practical_capacity)
-    liquidation_days = redemption / max(practical_capacity, 1.0)
+    liquidation_days = redemption / practical_capacity
     gap_ratio = gap / redemption if redemption else 0.0
 
     discount = (
@@ -139,8 +154,9 @@ def analyze_liquidity_stress(holdings: Iterable[Holding], scenario: StressScenar
         risk_level=risk,
         key_warnings=warnings,
         methodology={
-            "liquidity_model": "ADV is haircut by liquidity tier (liquid 35%, moderate 20%, thin 6%) and scaled by market-depth stress.",
-            "capacity_model": "Daily stress capacity is the lesser of authorized-participant capacity and stressed underlying basket liquidity.",
+            "liquidity_model": "Fixed-weight pro-rata basket: constituent capacity is haircut ADV (liquid 35%, moderate 20%, thin 6%) divided by normalized holding weight and scaled by market depth; the smallest capacity binds.",
+            "capacity_model": "Daily stress capacity is the lesser of authorized-participant capacity and the limiting constituent's basket capacity. Custom baskets and selective cash sales are not modeled.",
             "discount_model": "Estimated discount combines weighted spread, tracking buffer, liquidity gap ratio, thin-basket penalty, and liquidation-days penalty.",
         },
+        limiting_constituent=profile.limiting_constituent,
     )

@@ -48,6 +48,8 @@ def result_to_dict(result: CascadeResult) -> dict:
         "final_prices": result.final_prices,
         "total_liquidated_value": result.total_liquidated_value,
         "systemic_risk_score": result.systemic_risk_score,
+        "risk_components": result.risk_components,
+        "initial_gross_asset_value": result.initial_gross_asset_value,
         "most_stressed_fund": result.most_stressed_fund,
         "fund_summaries": {k: _clean(v) for k, v in result.fund_summaries.items()},
         "events": [_clean(e) for e in result.events],
@@ -66,13 +68,15 @@ def render_markdown(result: CascadeResult) -> str:
         "",
         "## Final fund health",
         "",
-        "| Fund | Assets | Debt | Equity | Margin | Leverage |",
-        "|---|---:|---:|---:|---:|---:|",
+        "| Fund | Assets | Debt | Equity | Margin | Leverage | Status |",
+        "|---|---:|---:|---:|---:|---:|---|",
     ]
     for summary in data["fund_summaries"].values():
+        margin = f"{summary['margin_ratio']:.1%}" if summary['margin_ratio'] is not None else "N/A"
+        leverage = f"{summary['leverage']:.2f}x" if summary['leverage'] is not None else "N/A"
         lines.append(
             f"| {summary['fund']} | ${summary['gross_asset_value']:,.0f} | ${summary['debt']:,.0f} | "
-            f"${summary['equity']:,.0f} | {summary['margin_ratio']:.1%} | {summary['leverage']:.2f}x |"
+            f"${summary['equity']:,.0f} | {margin} | {leverage} | {summary['status']} |"
         )
     lines.extend(["", "## Final prices", "", "| Asset | Initial | Final | Move |", "|---|---:|---:|---:|"])
     for asset, initial in data["initial_prices"].items():
@@ -121,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         max_rounds=args.max_rounds,
     )
     rendered = (
-        json.dumps(result_to_dict(result), indent=2, sort_keys=True)
+        json.dumps(result_to_dict(result), indent=2, sort_keys=True, allow_nan=False)
         if args.format == "json"
         else render_markdown(result)
     )

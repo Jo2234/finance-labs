@@ -72,6 +72,10 @@ CSV files must include these columns:
 | `cash_interest` | Cash interest expense in millions |
 | `liquidity` | Cash plus available revolver capacity in millions |
 
+## Input validation
+
+All financial inputs and covenant thresholds must be finite numbers. Missing/undefined numeric values such as `NaN` or infinity are rejected before a pass/breach report is emitted; supply verified financials rather than treating missing data as a passing covenant.
+
 ## Methodology
 
 The core formulas are deliberately transparent:

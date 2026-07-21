@@ -95,6 +95,10 @@ CSV files must include these columns:
 | `bid` / `ask` | Latest top-of-book quote |
 | `bid_size` / `ask_size` | Top-of-book depth on each side |
 
+## Input validation
+
+All numeric CSV fields must be finite. `NaN` and infinity in any row are data errors, including historical quote/depth fields; the CLI fails instead of assigning a stress label. The public metric and scoring functions also reject non-finite inputs.
+
 ## Methodology
 
 The score is deliberately simple and auditable:
