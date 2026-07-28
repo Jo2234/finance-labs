@@ -14,8 +14,8 @@ keywords = ["credit", "finance", "covenants", "risk", "cli"]
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/Jo2234/covenant-headroom-lab"
-Repository = "https://github.com/Jo2234/covenant-headroom-lab"
+Homepage = "https://github.com/Jo2234/finance-labs/tree/main/labs/covenant-headroom"
+Repository = "https://github.com/Jo2234/finance-labs/tree/main/labs/covenant-headroom"
 
 [project.scripts]
 covenant-headroom = "covenant_headroom_lab.__main__:main"
