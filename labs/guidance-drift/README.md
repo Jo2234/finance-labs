@@ -19,8 +19,8 @@ This repo demonstrates a practical finance/AI workflow:
 ## Install
 
 ```bash
-git clone https://github.com/Jo2234/guidance-drift-lab.git
-cd guidance-drift-lab
+git clone https://github.com/Jo2234/finance-labs.git
+cd finance-labs/labs/guidance-drift
 python -m venv .venv
 source .venv/bin/activate
 pip install -e '.[dev]'

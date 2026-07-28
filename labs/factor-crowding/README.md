@@ -28,8 +28,8 @@ It is intentionally offline and uses no paid APIs, secrets, or scraping. Bring y
 ## Quickstart
 
 ```bash
-git clone https://github.com/Jo2234/factor-crowding-radar.git
-cd factor-crowding-radar
+git clone https://github.com/Jo2234/finance-labs.git
+cd finance-labs/labs/factor-crowding
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .

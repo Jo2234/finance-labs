@@ -16,8 +16,8 @@ Rate-cut narratives often compress several different questions into one headline
 ## Quickstart
 
 ```bash
-git clone https://github.com/Jo2234/central-bank-path-lab.git
-cd central-bank-path-lab
+git clone https://github.com/Jo2234/finance-labs.git
+cd finance-labs/labs/central-bank-path
 python -m venv .venv
 . .venv/bin/activate
 python -m pip install -e .
