@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,6 +9,7 @@ description = "CLI that turns option-chain CSVs into implied-volatility skew and
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "Johan Vaz", email = "v.johan2234@gmail.com"}]
 keywords = ["options", "implied-volatility", "finance", "risk", "quant"]
 classifiers = [
