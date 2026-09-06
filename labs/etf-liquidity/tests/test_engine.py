@@ -16,7 +16,7 @@ def test_underlying_liquidity_haircuts_by_liquidity_tier():
 
     profile = compute_underlying_liquidity(holdings)
 
-    assert profile.effective_daily_liquidity_usd == pytest.approx(351_200_000)
+    assert profile.effective_daily_liquidity_usd == pytest.approx(2_400_000)
     assert profile.weighted_spread_bps == pytest.approx(41.5)
     assert profile.thin_weight == pytest.approx(0.50)
 
@@ -53,3 +53,29 @@ def test_invalid_holdings_weights_are_rejected():
 
     with pytest.raises(ValueError, match="weights must sum to 1.0"):
         compute_underlying_liquidity(holdings)
+
+
+def test_fixed_weight_redemption_cannot_substitute_liquid_name_for_bottleneck():
+    holdings = [Holding('LARGE', .5, 1_000_000_000, 2, 'liquid'),
+                Holding('SMALL', .5, 1_000_000, 2, 'liquid')]
+    report = analyze_liquidity_stress(holdings, StressScenario(500_000_000, .1, 1_000_000_000))
+    assert report.effective_underlying_liquidity_usd == pytest.approx(700_000)
+    assert report.liquidation_days == pytest.approx(25_000_000 / 350_000)
+    assert report.liquidity_gap_usd == pytest.approx(49_300_000)
+    assert report.limiting_constituent == 'SMALL'
+    assert report.risk_level == 'severe'
+    deeper = analyze_liquidity_stress(holdings, StressScenario(500_000_000, .1, 1_000_000_000, .5))
+    assert deeper.liquidation_days == pytest.approx(2 * report.liquidation_days)
+
+
+def test_ap_capacity_still_binds_when_smaller_than_basket_capacity():
+    report = analyze_liquidity_stress([Holding('A', 1, 1_000_000, 2, 'liquid')],
+                                     StressScenario(1_000_000, .1, 10_000))
+    assert report.liquidation_days == 10
+    assert report.liquidity_gap_usd == 90_000
+
+
+def test_duplicate_ticker_cannot_multiply_market_capacity():
+    with pytest.raises(ValueError, match='unique'):
+        compute_underlying_liquidity([Holding('A', .5, 100, 2, 'liquid'),
+                                      Holding('A', .5, 100, 2, 'liquid')])

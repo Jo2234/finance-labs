@@ -18,3 +18,29 @@ def test_analyze_chain_computes_skew_term_and_tail_flags():
     assert report.term_structure_slope > 0
     assert "left-tail hedge demand" in report.headline.lower()
     assert report.alert_level in {"watch", "elevated", "extreme"}
+
+
+def _snapshot():
+    return [
+        {'symbol': 'A', 'expiry': '2026-08-21', 'option_type': 'put', 'strike': 93, 'mid': 2,
+         'spot': 100, 'rate': .04, 'days_to_expiry': 45},
+        {'symbol': 'A', 'expiry': '2026-08-21', 'option_type': 'call', 'strike': 107, 'mid': 2,
+         'spot': 100, 'rate': .04, 'days_to_expiry': 45},
+    ]
+
+
+def test_rejects_cross_underlying_wing_pair():
+    import pytest
+    rows = _snapshot()
+    rows[1]['symbol'] = 'B'
+    with pytest.raises(ValueError, match='single underlying'):
+        analyze_chain(rows)
+
+
+def test_rejects_inconsistent_snapshot_before_wing_selection():
+    import pytest
+    for key, value in [('spot', 101), ('rate', .05), ('days_to_expiry', 46)]:
+        rows = _snapshot()
+        rows.append(dict(rows[1], strike=200, **{key: value}))
+        with pytest.raises(ValueError, match='consistent'):
+            analyze_chain(rows)
