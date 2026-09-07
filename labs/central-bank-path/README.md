@@ -68,6 +68,10 @@ Columns:
 - `expected_rate` — market-implied expected policy rate after the meeting.
 - `core_pce_yoy`, `unemployment_rate`, `ism_new_orders` — optional macro context used for interpretation flags.
 
+## Input validation
+
+All supplied rates and macro values must be finite numbers. Missing optional macro values may be left blank; `NaN` and infinity are rejected before odds or regime labels are calculated. Futures-only CSV rows use the same price validation as the Python conversion API.
+
 ## Methodology
 
 1. Validate that meeting rows are chronological.

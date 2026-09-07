@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from itertools import combinations
+from itertools import combinations_with_replacement
 import math
 from typing import Iterable, Mapping, Sequence
 
@@ -78,20 +78,24 @@ def analyze_crowding(raw_positions: Iterable[Mapping[str, object]], shock_bps: f
         -4.5% move in the top factor sleeve, amplified by correlation breadth.
     """
     positions = _parse_positions(raw_positions)
+    if not math.isfinite(shock_bps) or shock_bps < 0:
+        raise CrowdingInputError("shock_bps must be finite and non-negative")
     portfolio_weight = sum(p.weight for p in positions)
     if not 0.99 <= portfolio_weight <= 1.01:
         raise CrowdingInputError("position weights must sum to approximately 1.0")
+    positions = [Position(p.name, p.weight / portfolio_weight, p.factor, p.returns) for p in positions]
 
     factor_exposures = _factor_exposures(positions)
     top_factor, top_factor_weight = max(factor_exposures.items(), key=lambda item: item[1])
     concentration_hhi = sum(weight**2 for weight in factor_exposures.values())
     top_factor_positions = [position for position in positions if position.factor == top_factor]
-    avg_corr = _average_weighted_pairwise_correlation(top_factor_positions)
+    avg_corr = _top_factor_correlation(top_factor_positions)
     correlation_breadth = sum(
-        min(a.weight, b.weight)
-        for a, b in combinations(positions, 2)
+        a.weight * b.weight * (1 if i == j else 2)
+        for (i, a), (j, b) in combinations_with_replacement(enumerate(positions), 2)
         if a.factor == b.factor or weighted_correlation(a.returns, b.returns) >= 0.65
     )
+    correlation_breadth = min(1.0, correlation_breadth)
     crowding_score = _score(top_factor_weight, concentration_hhi, avg_corr, correlation_breadth)
     risk_level = _risk_level(crowding_score)
     shock = shock_bps / 10_000
@@ -114,7 +118,8 @@ def analyze_crowding(raw_positions: Iterable[Mapping[str, object]], shock_bps: f
         methodology=[
             "Aggregates gross portfolio weight by declared factor bucket.",
             "Computes normalized factor HHI to quantify concentration.",
-            "Measures position-return co-movement using exposure-weighted pairwise correlations.",
+            "Measures correlation between two independently sampled dollars within the top factor, including self-pairs; zero-variance returns contribute zero correlation.",
+            "Breadth is the probability that two independently sampled portfolio dollars share a factor or return correlation of at least 0.65; it is bounded by 1 and unchanged by splitting identical exposure into rows.",
             "Applies a basis-point unwind shock to the top factor sleeve with correlation amplification.",
         ],
     )
@@ -133,6 +138,8 @@ def _parse_positions(raw_positions: Iterable[Mapping[str, object]]) -> list[Posi
             raise CrowdingInputError(f"position {index} must include name, weight, factor, and numeric returns") from exc
         if not name or not factor:
             raise CrowdingInputError("position name and factor cannot be empty")
+        if not math.isfinite(weight) or not all(math.isfinite(value) for value in returns):
+            raise CrowdingInputError("position weights and returns must be finite")
         if weight < 0:
             raise CrowdingInputError("position weights must be non-negative")
         if expected_length is None:
@@ -152,16 +159,17 @@ def _factor_exposures(positions: Sequence[Position]) -> dict[str, float]:
     return exposures
 
 
-def _average_weighted_pairwise_correlation(positions: Sequence[Position]) -> float:
-    weighted_corrs = []
+def _top_factor_correlation(positions: Sequence[Position]) -> float:
+    """Expected return correlation of two dollar exposures sampled with replacement."""
+    weighted_corr = 0.0
     total_pair_weight = 0.0
-    for a, b in combinations(positions, 2):
-        pair_weight = math.sqrt(a.weight * b.weight)
-        weighted_corrs.append(weighted_correlation(a.returns, b.returns) * pair_weight)
+    for (i, a), (j, b) in combinations_with_replacement(enumerate(positions), 2):
+        pair_weight = a.weight * b.weight * (1 if i == j else 2)
+        weighted_corr += weighted_correlation(a.returns, b.returns) * pair_weight
         total_pair_weight += pair_weight
-    if not weighted_corrs or total_pair_weight <= 0:
+    if total_pair_weight <= 0:
         return 0.0
-    return sum(weighted_corrs) / total_pair_weight
+    return max(-1.0, min(1.0, weighted_corr / total_pair_weight))
 
 
 def _score(top_weight: float, hhi: float, avg_corr: float, breadth: float) -> int:
@@ -184,11 +192,11 @@ def _alerts(top_factor: str, top_weight: float, hhi: float, avg_corr: float, bre
     if top_weight >= 0.45:
         alerts.append(f"{top_factor} holds {top_weight:.1%} of portfolio weight; single-factor exit liquidity may dominate risk.")
     if avg_corr >= 0.65:
-        alerts.append(f"Average pairwise correlation is {avg_corr:.2f}; positions may de-risk together.")
+        alerts.append(f"Top-factor dollar-pair correlation is {avg_corr:.2f}; the sleeve has concentrated co-movement.")
     if hhi >= 0.40:
         alerts.append(f"Factor HHI is {hhi:.2f}; exposures are materially concentrated.")
     if breadth >= 0.25:
-        alerts.append(f"Correlation breadth is {breadth:.1%}; multiple sleeves share similar return paths.")
+        alerts.append(f"Correlation breadth is {breadth:.1%}; this share of dollar pairs shares a factor or correlated return paths.")
     if unwind_loss_pct <= -3.0:
         alerts.append(f"Modeled unwind stress loss is {unwind_loss_pct:.2f}%, large enough to merit desk-level review.")
     return alerts or ["No crowding threshold breached under the configured assumptions."]

@@ -27,6 +27,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--format", choices=["json", "markdown"], default="markdown", help="Output format")
     parser.add_argument("--output", type=Path, help="Optional output file; stdout is always a one-line summary for markdown")
     parser.add_argument("--fail-on", choices=["low", "medium", "high", "critical"], help="Exit non-zero at or above severity")
+    parser.add_argument(
+        "--trusted-message-index", type=int, action="append", default=[],
+        help="Exclude a verified trusted context message from scoring by zero-based index; repeatable. Evidence is retained.",
+    )
     return parser
 
 
@@ -34,7 +38,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        report = analyze_messages(load_messages(args.input))
+        report = analyze_messages(
+            load_messages(args.input), trusted_message_indices=args.trusted_message_index
+        )
     except Exception as exc:  # pragma: no cover - CLI boundary
         parser.error(str(exc))
 

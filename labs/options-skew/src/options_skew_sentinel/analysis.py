@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from math import isclose, isfinite
 from statistics import mean
 from typing import Iterable
 
@@ -38,9 +39,12 @@ class SkewReport:
 
 def _float(row: dict, key: str) -> float:
     try:
-        return float(row[key])
+        value = float(row[key])
     except KeyError as exc:
         raise ValueError(f"missing required column: {key}") from exc
+    if not isfinite(value):
+        raise ValueError(f"{key} must be finite")
+    return value
 
 
 def _best_wing_pair(rows: list[dict]) -> tuple[dict, dict]:
@@ -83,14 +87,29 @@ def analyze_chain(rows: Iterable[dict]) -> SkewReport:
     if not materialized:
         raise ValueError("option chain is empty")
 
-    symbol = str(materialized[0].get("symbol", "UNKNOWN"))
+    symbol = str(materialized[0].get("symbol", "")).strip()
+    if not symbol:
+        raise ValueError("symbol is required")
     spot = _float(materialized[0], "spot")
+    if spot <= 0:
+        raise ValueError("spot must be positive")
     by_expiry: dict[str, list[dict]] = {}
     for row in materialized:
-        by_expiry.setdefault(str(row.get("expiry")), []).append(row)
+        if str(row.get("symbol", "")).strip() != symbol:
+            raise ValueError("option chain must contain a single underlying symbol")
+        if not isclose(_float(row, "spot"), spot, rel_tol=1e-9, abs_tol=1e-9):
+            raise ValueError("option chain must use a consistent spot snapshot")
+        expiry = str(row.get("expiry", "")).strip()
+        if not expiry:
+            raise ValueError("expiry is required")
+        by_expiry.setdefault(expiry, []).append(row)
 
     expiries: list[ExpirySkew] = []
     for expiry, expiry_rows in sorted(by_expiry.items(), key=lambda item: _float(item[1][0], "days_to_expiry")):
+        for key in ("days_to_expiry", "rate"):
+            expected = _float(expiry_rows[0], key)
+            if any(not isclose(_float(row, key), expected, rel_tol=1e-9, abs_tol=1e-9) for row in expiry_rows):
+                raise ValueError(f"expiry {expiry} must use consistent {key}")
         put, call = _best_wing_pair(expiry_rows)
         put_iv = implied_volatility(
             "put",

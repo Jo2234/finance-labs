@@ -75,6 +75,10 @@ Write a report file:
 guidance-drift analyze examples/sample_guidance.csv --format markdown --output report.md
 ```
 
+## Input validation
+
+Each input file must contain exactly one company, and every row must supply its nonempty company name. Surrounding whitespace is trimmed; names otherwise must match exactly. Split multi-company exports before analysis so one issuer’s quarters cannot be attributed to another.
+
 ## Methodology
 
 Guidance Drift Lab computes:

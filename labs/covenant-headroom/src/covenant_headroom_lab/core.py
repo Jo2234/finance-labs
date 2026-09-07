@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 from dataclasses import asdict, dataclass
+from math import isfinite
 from pathlib import Path
 from typing import Iterable
 
@@ -55,6 +56,12 @@ def analyze_period(
     scenario: str = "base",
 ) -> CovenantResult:
     """Compute covenant ratios, absolute headroom, and breach status."""
+    for name in ("revenue", "adjusted_ebitda", "net_debt", "cash_interest", "liquidity"):
+        if not isfinite(getattr(period, name)):
+            raise ValueError(f"{name} must be finite")
+    for name in ("max_net_leverage", "min_interest_coverage", "min_liquidity"):
+        if not isfinite(getattr(spec, name)):
+            raise ValueError(f"{name} must be finite")
     _require_positive("adjusted_ebitda", period.adjusted_ebitda)
     _require_positive("cash_interest", period.cash_interest)
     _require_positive("max_net_leverage", spec.max_net_leverage)

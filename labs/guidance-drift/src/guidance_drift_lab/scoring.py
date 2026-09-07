@@ -103,9 +103,15 @@ def score_transcript(
 
 def analyze_company(rows: Iterable[Mapping[str, object]]) -> CompanyReport:
     scores: list[QuarterScore] = []
-    company = "Unknown company"
+    company: str | None = None
     for row in rows:
-        company = str(row.get("company") or company)
+        row_company = row.get("company")
+        if not isinstance(row_company, str) or not row_company.strip():
+            raise ValueError("every row must contain a nonempty company name")
+        row_company = row_company.strip()
+        if company is not None and row_company != company:
+            raise ValueError("all rows must belong to the same company")
+        company = row_company
         scores.append(
             score_transcript(
                 str(row["transcript"]),

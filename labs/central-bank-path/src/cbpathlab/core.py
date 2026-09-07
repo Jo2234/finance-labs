@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
+from math import isfinite
 from typing import Mapping
 
 
@@ -53,6 +54,11 @@ def futures_price_to_rate(price: float) -> float:
     return 100.0 - price
 
 
+def _require_finite(name: str, value: float) -> None:
+    if not isfinite(value):
+        raise ValueError(f"{name} must be finite")
+
+
 def _validate_chronological(meetings: list[Meeting]) -> None:
     parsed = [date.fromisoformat(m.date) for m in meetings]
     if parsed != sorted(parsed):
@@ -72,9 +78,15 @@ def infer_step_probabilities(
     adjacent expected-rate changes are divided by the configured policy step size.
     Values larger than one step are capped at 100% and surfaced through the bps field.
     """
+    _require_finite("current_rate", current_rate)
+    _require_finite("step_bps", step_bps)
     if step_bps <= 0:
         raise ValueError("step_bps must be positive")
     _validate_chronological(meetings)
+    for meeting in meetings:
+        _require_finite(f"{meeting.date}: expected_rate", meeting.expected_rate)
+        if meeting.futures_price is not None:
+            futures_price_to_rate(meeting.futures_price)
 
     previous_rate = current_rate
     steps: list[StepProbability] = []
@@ -100,7 +112,9 @@ def infer_step_probabilities(
 def analyze_path(inputs: PathInputs) -> PathAnalysis:
     if not inputs.meetings:
         raise ValueError("at least one policy meeting is required")
-    _validate_chronological(inputs.meetings)
+    _require_finite("neutral_rate", inputs.neutral_rate)
+    for name, value in inputs.macro.items():
+        _require_finite(name, value)
 
     steps = infer_step_probabilities(inputs.current_rate, inputs.meetings, inputs.step_bps)
     terminal_rate = inputs.meetings[-1].expected_rate

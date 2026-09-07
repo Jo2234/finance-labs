@@ -41,8 +41,9 @@ class FundSummary:
     gross_asset_value: float
     debt: float
     equity: float
-    margin_ratio: float
-    leverage: float
+    margin_ratio: float | None
+    leverage: float | None
+    status: str
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,7 @@ class CascadeResult:
     initial_prices: dict[str, float]
     final_prices: dict[str, float]
     fund_summaries: dict[str, FundSummary]
+    initial_gross_asset_value: float
     events: list[LiquidationEvent] = field(default_factory=list)
     scenario: dict = field(default_factory=dict)
 
@@ -70,24 +72,41 @@ class CascadeResult:
         return round(sum(event.sale_value for event in self.events), 6)
 
     @property
-    def systemic_risk_score(self) -> float:
+    def risk_components(self) -> dict[str, float]:
         if not self.initial_prices:
-            return 0.0
+            return {"average_asset_drawdown": 0.0, "stressed_fund_fraction": 0.0, "liquidation_fraction": 0.0}
         avg_drawdown = sum(
             max(0.0, (self.initial_prices[a] - self.final_prices[a]) / self.initial_prices[a])
             for a in self.initial_prices
         ) / len(self.initial_prices)
-        stressed_funds = sum(1 for s in self.fund_summaries.values() if s.margin_ratio < 0.35)
-        liquidation_load = self.total_liquidated_value / max(
-            1.0, sum(s.gross_asset_value for s in self.fund_summaries.values())
+        stressed_funds = sum(
+            1 for s in self.fund_summaries.values()
+            if s.equity < 0 or (s.margin_ratio is not None and s.margin_ratio < 0.35)
         )
-        return round(100 * (0.55 * avg_drawdown + 0.30 * liquidation_load + 0.15 * stressed_funds), 2)
+        return {
+            "average_asset_drawdown": avg_drawdown,
+            "stressed_fund_fraction": stressed_funds / max(1, len(self.fund_summaries)),
+            "liquidation_fraction": self.total_liquidated_value / self.initial_gross_asset_value
+            if self.initial_gross_asset_value > 0 else 0.0,
+        }
+
+    @property
+    def systemic_risk_score(self) -> float:
+        components = self.risk_components
+        return round(100 * (
+            0.55 * min(1.0, components["average_asset_drawdown"])
+            + 0.30 * min(1.0, components["liquidation_fraction"])
+            + 0.15 * components["stressed_fund_fraction"]
+        ), 2)
 
     @property
     def most_stressed_fund(self) -> str | None:
         if not self.fund_summaries:
             return None
-        return min(self.fund_summaries.values(), key=lambda s: s.margin_ratio).fund
+        return min(
+            self.fund_summaries.values(),
+            key=lambda s: s.margin_ratio if s.margin_ratio is not None else (-float("inf") if s.debt > 0 else 1.0),
+        ).fund
 
 
 def run_cascade(
@@ -110,7 +129,7 @@ def run_cascade(
         raise ValueError("positions must not be empty")
     if not (0 <= maintenance_margin < target_margin < 1):
         raise ValueError("require 0 <= maintenance_margin < target_margin < 1")
-    if impact_coefficient < 0:
+    if not isfinite(impact_coefficient) or impact_coefficient < 0:
         raise ValueError("impact_coefficient must be non-negative")
     if max_rounds < 1:
         raise ValueError("max_rounds must be at least 1")
@@ -120,12 +139,16 @@ def run_cascade(
     initial_prices = dict(prices)
     depths = _asset_depths(positions)
     debt = _fund_debt(positions)
-    units = {(p.fund, p.asset): float(p.units) for p in positions}
+    units: dict[tuple[str, str], float] = {}
+    for position in positions:
+        key = (position.fund, position.asset)
+        units[key] = units.get(key, 0.0) + position.units
+    initial_gross_asset_value = sum(qty * prices[asset] for (_, asset), qty in units.items())
 
     for asset, shock in shocks.items():
         if asset not in prices:
             raise ValueError(f"shock references unknown asset: {asset}")
-        if shock <= -1:
+        if not isfinite(shock) or shock <= -1:
             raise ValueError("shock cannot be less than or equal to -100%")
         prices[asset] = round(prices[asset] * (1 + shock), 10)
 
@@ -134,7 +157,7 @@ def run_cascade(
 
     for round_number in range(1, max_rounds + 1):
         summaries = _summaries(units, prices, debt)
-        breached = [s for s in summaries.values() if s.margin_ratio < maintenance_margin and s.gross_asset_value > 0]
+        breached = [s for s in summaries.values() if s.margin_ratio is not None and s.margin_ratio < maintenance_margin and s.gross_asset_value > 0]
         if not breached:
             rounds_completed = round_number
             break
@@ -191,6 +214,7 @@ def run_cascade(
         initial_prices={k: round(v, 6) for k, v in initial_prices.items()},
         final_prices={k: round(v, 6) for k, v in prices.items()},
         fund_summaries=_summaries(units, prices, debt),
+        initial_gross_asset_value=initial_gross_asset_value,
         events=events,
         scenario={
             "shocks": shocks,
@@ -232,16 +256,17 @@ def _summaries(
     summaries: dict[str, FundSummary] = {}
     for fund in funds:
         assets = sum(qty * prices[asset] for (f, asset), qty in units.items() if f == fund)
-        d = min(debt.get(fund, 0.0), assets)
+        d = debt.get(fund, 0.0)
         equity = assets - d
-        margin = equity / assets if assets > 0 else 1.0
-        leverage = assets / equity if equity > 0 else float("inf")
+        margin = equity / assets if assets > 0 else None
+        leverage = assets / equity if equity > 0 else None
         summaries[fund] = FundSummary(
             fund=fund,
             gross_asset_value=round(assets, 6),
             debt=round(d, 6),
             equity=round(equity, 6),
-            margin_ratio=round(margin, 6),
-            leverage=round(leverage, 6) if leverage != float("inf") else leverage,
+            margin_ratio=round(margin, 6) if margin is not None else None,
+            leverage=round(leverage, 6) if leverage is not None else None,
+            status="insolvent" if equity < 0 else ("empty" if assets == 0 else "solvent"),
         )
     return summaries

@@ -20,6 +20,8 @@ def black_scholes_price(
 
     Parameters use annualized rate and volatility, and calendar days to expiry.
     """
+    if not all(math.isfinite(value) for value in (spot, strike, rate, days_to_expiry, volatility)):
+        raise ValueError("pricing inputs must be finite")
     if spot <= 0 or strike <= 0:
         raise ValueError("spot and strike must be positive")
     if days_to_expiry <= 0:
@@ -63,11 +65,10 @@ def implied_volatility(
     max_iterations: int = 120,
 ) -> float:
     """Recover Black-Scholes implied volatility with robust bisection."""
-    if market_price <= 0:
+    if not math.isfinite(market_price) or market_price <= 0:
         raise ValueError("market_price must be positive")
-    floor = intrinsic_value(option_type, spot=spot, strike=strike)
-    if market_price < floor - 1e-12:
-        raise ValueError(f"market price {market_price:.4f} is below intrinsic value {floor:.4f}")
+    if not math.isfinite(tolerance) or tolerance <= 0 or max_iterations < 1:
+        raise ValueError("tolerance and max_iterations must be positive")
 
     low = 1e-6
     high = 5.0

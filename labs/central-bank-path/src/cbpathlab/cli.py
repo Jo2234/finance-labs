@@ -4,11 +4,12 @@ import argparse
 import csv
 import json
 from dataclasses import asdict
+from math import isfinite
 from pathlib import Path
 from typing import Any
 
 from cbpathlab import __version__
-from cbpathlab.core import Meeting, PathAnalysis, PathInputs, analyze_path
+from cbpathlab.core import Meeting, PathAnalysis, PathInputs, analyze_path, futures_price_to_rate
 
 
 def load_csv(path: Path) -> PathInputs:
@@ -19,7 +20,11 @@ def load_csv(path: Path) -> PathInputs:
     meetings: list[Meeting] = []
     macro: dict[str, float] = {}
     for row in rows:
-        expected_rate = float(row["expected_rate"]) if row.get("expected_rate") else 100.0 - float(row["futures_price"])
+        expected_rate = (
+            float(row["expected_rate"])
+            if row.get("expected_rate")
+            else futures_price_to_rate(float(row["futures_price"]))
+        )
         meetings.append(
             Meeting(
                 date=row["date"],
@@ -30,7 +35,10 @@ def load_csv(path: Path) -> PathInputs:
         )
         for field in ("core_pce_yoy", "unemployment_rate", "ism_new_orders"):
             if row.get(field) not in (None, ""):
-                macro[field] = float(row[field])
+                value = float(row[field])
+                if not isfinite(value):
+                    raise ValueError(f"{field} must be finite")
+                macro[field] = value
 
     return PathInputs(current_rate=0.0, neutral_rate=0.0, meetings=meetings, macro=macro)
 

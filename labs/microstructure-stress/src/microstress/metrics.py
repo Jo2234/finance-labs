@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
+
+
+def _require_finite(**values: float) -> None:
+    for name, value in values.items():
+        if not isfinite(value):
+            raise ValueError(f"{name} must be finite")
 
 
 @dataclass(frozen=True)
@@ -18,6 +25,7 @@ class OrderBookSnapshot:
 
 def spread_bps(*, bid: float, ask: float) -> float:
     """Return quoted spread in basis points relative to mid-price."""
+    _require_finite(bid=bid, ask=ask)
     if bid <= 0 or ask <= 0:
         raise ValueError("bid and ask must be positive")
     if ask <= bid:
@@ -28,6 +36,7 @@ def spread_bps(*, bid: float, ask: float) -> float:
 
 def order_book_imbalance(snapshot: OrderBookSnapshot) -> float:
     """Signed depth pressure: positive means bid-side depth dominates."""
+    _require_finite(bid_size=snapshot.bid_size, ask_size=snapshot.ask_size)
     total = snapshot.bid_size + snapshot.ask_size
     if snapshot.bid_size < 0 or snapshot.ask_size < 0:
         raise ValueError("depth sizes cannot be negative")
@@ -41,9 +50,11 @@ def _returns(bars: list[Bar]) -> list[tuple[float, float]]:
         raise ValueError("at least two bars are required")
     out: list[tuple[float, float]] = []
     previous = bars[0]
+    _require_finite(close=previous.close, volume=previous.volume)
     if previous.close <= 0:
         raise ValueError("close prices must be positive")
     for bar in bars[1:]:
+        _require_finite(close=bar.close, volume=bar.volume)
         if bar.close <= 0:
             raise ValueError("close prices must be positive")
         if bar.volume <= 0:
@@ -66,6 +77,8 @@ def volume_shock(bars: list[Bar]) -> float:
     if len(bars) < 2:
         raise ValueError("at least two bars are required")
     previous_volumes = [bar.volume for bar in bars[:-1]]
+    for bar in bars:
+        _require_finite(volume=bar.volume)
     if any(volume <= 0 for volume in previous_volumes) or bars[-1].volume <= 0:
         raise ValueError("volumes must be positive")
     baseline = sum(previous_volumes) / len(previous_volumes)
@@ -83,6 +96,7 @@ def stress_score(*, spread_bps: float, volume_shock: float, amihud: float, abs_i
     - depth imbalance: 15 points, full stress at absolute imbalance of 1
     - baseline friction: 5 points for non-zero trading frictions
     """
+    _require_finite(spread_bps=spread_bps, volume_shock=volume_shock, amihud=amihud, abs_imbalance=abs_imbalance)
     if min(spread_bps, volume_shock, amihud, abs_imbalance) < 0:
         raise ValueError("stress inputs cannot be negative")
     if abs_imbalance > 1:
@@ -97,6 +111,7 @@ def stress_score(*, spread_bps: float, volume_shock: float, amihud: float, abs_i
 
 
 def classify_stress(score: float) -> str:
+    _require_finite(score=score)
     if score < 30:
         return "calm"
     if score < 55:
