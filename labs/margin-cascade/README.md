@@ -22,8 +22,8 @@ Risk often becomes systemic through mechanics rather than narratives: leverage, 
 ## Quickstart
 
 ```bash
-git clone https://github.com/Jo2234/margin-cascade-lab.git
-cd margin-cascade-lab
+git clone https://github.com/Jo2234/finance-labs.git
+cd finance-labs/labs/margin-cascade
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
