@@ -20,8 +20,8 @@ No paid APIs, credentials, or live scraping are required. The included sample da
 ## Quickstart
 
 ```bash
-git clone https://github.com/Jo2234/microstructure-stress-lab.git
-cd microstructure-stress-lab
+git clone https://github.com/Jo2234/finance-labs.git
+cd finance-labs/labs/microstructure-stress
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .

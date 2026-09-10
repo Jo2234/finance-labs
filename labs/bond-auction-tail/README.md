@@ -18,8 +18,8 @@ Treasury auctions are one of the cleanest real-time windows into duration demand
 ## Quickstart
 
 ```bash
-git clone https://github.com/Jo2234/bond-auction-tail-monitor.git
-cd bond-auction-tail-monitor
+git clone https://github.com/Jo2234/finance-labs.git
+cd finance-labs/labs/bond-auction-tail
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
