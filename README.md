@@ -2,6 +2,23 @@
 
 A systematic toolkit of small, offline, test-covered risk and market-structure diagnostics.
 
+## Try the versioned toolkit
+
+[Download v0.1.0](https://github.com/Jo2234/finance-labs/releases/tag/v0.1.0) for ten independent Python tools, tested wheels, source distributions, example outputs, and SHA-256 checksums. Python 3.10+ is required. These are transparent scenario diagnostics using synthetic examples; their outputs are not forecasts or validated investment signals.
+
+For a two-minute example, clone the release and install one lab:
+
+```bash
+git clone --branch v0.1.0 --depth 1 https://github.com/Jo2234/finance-labs.git
+cd finance-labs
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install ./labs/margin-cascade
+margin-cascade --book labs/margin-cascade/examples/sample_book.csv --shock ALPHA=-0.22 --shock GAMMA=-0.08 --format markdown
+```
+
+The report traces margin calls, forced sales, and secondary price impact for the bundled synthetic book. Change a shock and compare the resulting stress. The repository root is a collection, not an installable Python package. To install a downloaded wheel without network access, use `python -m pip install --no-index path/to/margin_cascade_lab-0.1.0-py3-none-any.whl`; example inputs are in the repository and source distributions.
+
 ## Labs
 
 Every lab is an independent Python project with its own package metadata, source package, tests, examples, and README. Commands below run from the repository root without installing the package.
@@ -30,7 +47,18 @@ PYTHONPATH=src python3 -m pytest -q
 
 The shared GitHub Actions workflow runs this pattern for every lab on Python 3.10 and 3.12.
 
+## Build and verify a release
+
+Using Python 3.11+, install `build`, `setuptools>=77`, `wheel`, and `pytest` in a development environment, then run:
+
+```bash
+python scripts/check_release.py
+```
+
+This runs each lab's tests, builds its wheel from a source distribution, checks that the MIT license and example inputs are included, installs all ten wheels in a fresh environment without downloading runtime dependencies, and executes every example in the table above. `dist/release/validation.json` contains the test summaries and actual example output; `SHA256SUMS` covers every release asset. Choose a new empty directory with `--out` for a subsequent build. Package build dependencies may require network access; running the installed labs does not.
+
+See [release notes](CHANGELOG.md) for the contents and limits of each toolkit snapshot.
+
 ## License
 
 MIT
-

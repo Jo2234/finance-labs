@@ -9,6 +9,7 @@ description = "Offline market microstructure stress analytics for liquidity, spr
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Johan Vaz", email = "252314190+Jo2234@users.noreply.github.com" }]
 dependencies = []
 keywords = ["finance", "market-microstructure", "liquidity", "risk", "cli"]
